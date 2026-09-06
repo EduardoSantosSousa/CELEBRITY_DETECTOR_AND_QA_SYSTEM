@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: celebrity-detector-app
-          image: us-central1-docker.pkg.dev/<GCP_PROJECT_ID>/celebrity-detector-repo/celebrity-detector:latest
+          image: us-central1-docker.pkg.dev/celebrity-detector-507814/celebrity-detector-repo/celebrity-detector:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
