@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Celebrity identification results and AI-powered questions and answers.">
+    <title>Detection Results — Celebrity Detector</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+</head>
+<body class="min-h-screen bg-background text-on-background antialiased">
+    <header class="sticky top-0 z-50 border-b border-outline-variant/60 bg-background/90 shadow-[0_4px_20px_rgba(224,64,160,0.10)] backdrop-blur-xl">
+        <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
+            <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 text-xl font-black tracking-tight text-primary sm:text-2xl">
+                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="" class="h-9 w-9 rounded-xl shadow-[0_5px_14px_rgba(224,64,160,0.24)]">
+                <span>Celebrity Detector</span>
+            </a>
+            <nav aria-label="Main navigation" class="hidden items-center gap-8 md:flex">
+                <a href="{{ url_for('main.index') }}" class="text-sm font-semibold text-on-surface-variant transition hover:text-secondary">Detect</a>
+                <a href="#questions" class="border-b-2 border-primary pb-1 text-sm font-bold text-primary">Q&A</a>
+            </nav>
+            <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-[0_6px_18px_rgba(224,64,160,0.25)] transition hover:-translate-y-0.5">
+                <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                New image
+            </a>
+        </div>
+    </header>
+
+    <main class="relative isolate overflow-hidden">
+        <div aria-hidden="true" class="absolute left-[5%] top-12 -z-10 h-72 w-72 rounded-full bg-primary-fixed/45 blur-3xl"></div>
+        <div aria-hidden="true" class="absolute right-[4%] top-44 -z-10 h-80 w-80 rounded-full bg-tertiary-fixed/35 blur-3xl"></div>
+
+        <div class="mx-auto max-w-7xl px-5 py-12 sm:px-8 md:py-16">
+            {% if error %}
+            <div role="alert" class="mb-8 flex items-start gap-3 rounded-2xl border border-error/40 bg-error-container px-5 py-4 text-on-error-container shadow-sm">
+                <svg aria-hidden="true" class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 17h.01"></path></svg>
+                <p class="font-bold">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <header class="mb-10 max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full bg-primary-fixed px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-on-primary-fixed-variant">
+                    <span aria-hidden="true">✓</span> Analysis complete
+                </span>
+                <h1 class="mt-5 text-4xl font-black tracking-[-0.03em] sm:text-5xl">We found a <span class="text-primary">match</span></h1>
+                <p class="mt-4 text-lg leading-7 text-on-surface-variant">Review the processed image, learn about the identified celebrity, and ask a follow-up question.</p>
+            </header>
+
+            <div class="grid grid-cols-1 items-start gap-7 lg:grid-cols-12">
+                <section aria-labelledby="processed-image-title" class="overflow-hidden rounded-[2rem] border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_18px_50px_rgba(124,82,170,0.13)] sm:p-6 lg:col-span-7">
+                    <div class="mb-4 flex items-center justify-between px-1">
+                        <h2 id="processed-image-title" class="text-lg font-black">Processed image</h2>
+                        <span class="rounded-full bg-tertiary-fixed px-3 py-1 text-xs font-bold text-on-tertiary-fixed">Face detected</span>
+                    </div>
+                    <div class="flex min-h-[340px] items-center justify-center overflow-hidden rounded-[1.5rem] bg-surface-container sm:min-h-[480px]">
+                        <img class="max-h-[620px] w-full object-contain" src="data:image/jpeg;base64,{{ result_img_data }}" alt="Uploaded image with the detected face highlighted">
+                    </div>
+                </section>
+
+                <div class="flex flex-col gap-7 lg:col-span-5">
+                    <section aria-labelledby="celebrity-name" class="relative overflow-hidden rounded-[2rem] border border-outline-variant bg-surface-container-lowest p-7 shadow-[0_18px_50px_rgba(124,82,170,0.13)] sm:p-8">
+                        <div aria-hidden="true" class="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-primary-fixed/60 blur-3xl"></div>
+                        <div class="relative">
+                            <span class="inline-block rounded-full bg-secondary-fixed px-3 py-1.5 text-xs font-black uppercase tracking-wider text-on-secondary-fixed-variant">Identified celebrity</span>
+                            <h2 id="celebrity-name" class="mt-5 text-3xl font-black tracking-tight text-on-surface sm:text-4xl">{{ player_name }}</h2>
+                            <dl class="mt-6 grid gap-3">
+                                {% for block in player_info.split('\n\n') %}
+                                    {% set field = block.split(':\n', 1) %}
+                                    {% if field|length == 2 %}
+                                    <div class="rounded-2xl bg-surface-container-low px-4 py-3.5">
+                                        <dt class="text-[0.7rem] font-black uppercase tracking-[0.13em] text-secondary">{{ field[0] }}</dt>
+                                        <dd class="mt-1.5 text-[0.95rem] leading-6 text-on-surface">{{ field[1] }}</dd>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </dl>
+                        </div>
+                    </section>
+
+                    {% if answer %}
+                    <section aria-live="polite" aria-labelledby="answer-title" class="rounded-[2rem] bg-tertiary-fixed p-6 text-on-tertiary-fixed shadow-[0_14px_36px_rgba(0,150,204,0.16)] sm:p-7">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-tertiary text-on-tertiary">
+                                <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h8M8 14h5"></path><path d="M6 19l-2 2v-5a8 8 0 1 1 4 3"></path></svg>
+                            </span>
+                            <div>
+                                <span class="text-[0.65rem] font-black uppercase tracking-[0.16em] text-on-tertiary-fixed-variant">AI response</span>
+                                <h2 id="answer-title" class="text-xl font-black">Answer</h2>
+                            </div>
+                        </div>
+                        <p class="mt-5 whitespace-pre-line break-words text-[0.95rem] leading-7">{{ answer }}</p>
+                    </section>
+                    {% endif %}
+
+                    <section id="questions" aria-labelledby="question-title" class="rounded-[2rem] bg-primary-container p-7 text-on-primary-container shadow-[0_16px_40px_rgba(224,64,160,0.18)] sm:p-8">
+                        <span class="text-xs font-black uppercase tracking-[0.14em]">Continue exploring</span>
+                        <h2 id="question-title" class="mt-2 text-2xl font-black">Ask about {{ player_name }}</h2>
+                        <p class="mt-2 leading-6 opacity-80">Ask about their career, notable work, achievements, or public life.</p>
+
+                        <form method="post" class="mt-6 flex flex-col gap-4" data-question-form>
+                            <input type="hidden" name="action" value="ask">
+                            <input type="hidden" name="player_name" value="{{ player_name }}">
+                            <input type="hidden" name="player_info" value="{{ player_info }}">
+                            <input type="hidden" name="result_img_data" value="{{ result_img_data }}">
+
+                            <label for="question" class="font-bold">Your question</label>
+                            <textarea id="question" name="question" rows="4" maxlength="500" required class="w-full resize-y rounded-2xl border-2 border-outline-variant bg-surface-container-lowest p-4 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:ring-primary" placeholder="What is this person best known for?">{{ user_question }}</textarea>
+
+                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-on-primary-container px-7 py-4 font-black text-primary-fixed shadow-[0_8px_22px_rgba(46,26,40,0.20)] transition hover:-translate-y-0.5 sm:w-fit">
+                                Generate answer
+                                <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+                            </button>
+                        </form>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-outline-variant bg-surface-container-low">
+        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 text-center sm:flex-row sm:text-left">
+            <strong class="text-lg text-primary">Celebrity Detector</strong>
+            <p class="text-sm text-on-surface-variant">&copy; 2026 Celebrity Detector AI. Educational project.</p>
+        </div>
+    </footer>
+
+    <script>
+        const questionForm = document.querySelector('[data-question-form]');
+        questionForm?.addEventListener('submit', () => {
+            const button = questionForm.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Generating answer...';
+            button.classList.add('opacity-70', 'cursor-wait');
+        });
+    </script>
+</body>
+</html>

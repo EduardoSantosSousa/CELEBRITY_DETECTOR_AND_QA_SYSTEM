@@ -1,0 +1,75 @@
+@import "tailwindcss" source(none);
+@plugin "@tailwindcss/forms";
+@source "../../templates";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-primary: #e040a0;
+    --color-primary-container: #f080c0;
+    --color-primary-fixed: #ffd6ee;
+    --color-primary-fixed-dim: #f0a0cc;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #2e1a28;
+    --color-on-primary-fixed: #3d0028;
+    --color-on-primary-fixed-variant: #a02070;
+    --color-secondary: #7c52aa;
+    --color-secondary-fixed: #eedcff;
+    --color-secondary-fixed-dim: #c8a8e8;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-fixed: #1a1030;
+    --color-on-secondary-fixed-variant: #4a3068;
+    --color-tertiary: #0096cc;
+    --color-tertiary-container: #40c0ee;
+    --color-tertiary-fixed: #c8eaff;
+    --color-on-tertiary: #ffffff;
+    --color-on-tertiary-container: #00334d;
+    --color-on-tertiary-fixed: #001a33;
+    --color-background: #fef7ff;
+    --color-on-background: #2e1a28;
+    --color-surface: #fef7ff;
+    --color-surface-container: #f8eef8;
+    --color-surface-container-low: #fbf2fb;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-high: #f2e8f2;
+    --color-surface-container-highest: #ece2ec;
+    --color-surface-variant: #f2e8f2;
+    --color-surface-dim: #e0d6e0;
+    --color-on-surface: #2e1a28;
+    --color-on-surface-variant: #604868;
+    --color-outline: #907898;
+    --color-outline-variant: #dcc8e0;
+    --color-error: #e53e3e;
+    --color-error-container: #ffe8e8;
+    --color-on-error-container: #9b1c1c;
+    --font-headline: "DM Sans", system-ui, sans-serif;
+    --font-body: "DM Sans", system-ui, sans-serif;
+    --radius: 1rem;
+    --radius-lg: 2rem;
+    --radius-xl: 3rem;
+}
+
+@layer base {
+    body { font-family: "DM Sans", system-ui, sans-serif; }
+}
+
+@layer components {
+    .bouncy-hover { transition: transform 0.3s cubic-bezier(.175,.885,.32,1.275); }
+    .bouncy-hover:hover { transform: scale(1.03); }
+    .candy-shadow-primary { box-shadow: 0 4px 16px rgb(224 64 160 / 20%); }
+    .candy-shadow-secondary { box-shadow: 0 4px 16px rgb(124 82 170 / 20%); }
+    .candy-shadow-tertiary { box-shadow: 0 4px 16px rgb(0 150 204 / 20%); }
+    .glass-card {
+        border: 1px solid rgb(255 255 255 / 50%);
+        background: rgb(254 247 255 / 80%);
+        backdrop-filter: blur(12px);
+    }
+    .bento-card { box-shadow: 0 4px 16px rgb(124 82 170 / 10%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

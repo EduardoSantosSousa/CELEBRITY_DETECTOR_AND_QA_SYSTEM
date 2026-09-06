@@ -1,0 +1,16 @@
+.git
+.gitignore
+.circleci
+.env
+GCP-key.json
+gcp-key.json
+*.key.json
+venv
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+node_modules
+npm-debug.log
+Next_Steps.md
+GUIA_*.md

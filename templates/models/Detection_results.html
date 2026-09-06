@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resultado — Celebrity Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+    <header class="sticky top-0 z-50 bg-background shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="{{ url_for('main.index') }}" class="text-2xl font-headline font-black text-primary">Celebrity Detector</a>
+            <a href="{{ url_for('main.index') }}" class="bg-primary text-on-primary px-6 py-2 rounded-full font-bold">Nova imagem</a>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-8 py-12">
+        {% if error %}
+        <div role="alert" class="mb-8 px-6 py-4 rounded-2xl border-2 border-error bg-error-container text-on-error-container font-bold">{{ error }}</div>
+        {% endif %}
+
+        <h1 class="text-4xl md:text-5xl font-headline font-black text-primary mb-8">Identificação concluída</h1>
+        <div class="grid lg:grid-cols-12 gap-8 items-start">
+            <section class="lg:col-span-7 bg-white rounded-xl p-5 bento-card">
+                <img class="w-full max-h-[600px] object-contain rounded-lg" src="data:image/jpeg;base64,{{ result_img_data }}" alt="Imagem processada com o rosto detectado">
+            </section>
+
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <section class="bg-white rounded-xl p-8 bento-card">
+                    <span class="inline-block bg-secondary-fixed px-3 py-1 rounded-full text-xs font-bold uppercase mb-4">Celebridade identificada</span>
+                    <h2 class="text-3xl font-headline font-black mb-4">{{ player_name }}</h2>
+                    <pre class="text-on-surface-variant whitespace-pre-wrap font-body break-words">{{ player_info }}</pre>
+                </section>
+
+                <section class="bg-primary-container rounded-xl p-6 bento-card">
+                    <h2 class="font-bold text-2xl mb-2">Pergunte sobre {{ player_name }}</h2>
+                    <form method="post" class="flex flex-col gap-4 mt-5">
+                        <input type="hidden" name="action" value="ask">
+                        <input type="hidden" name="player_name" value="{{ player_name }}">
+                        <input type="hidden" name="player_info" value="{{ player_info }}">
+                        <input type="hidden" name="result_img_data" value="{{ result_img_data }}">
+                        <label for="question" class="font-bold">Sua pergunta</label>
+                        <textarea id="question" name="question" rows="4" maxlength="500" required class="w-full rounded-2xl border-2 border-outline-variant bg-white p-4" placeholder="Qual foi seu trabalho mais premiado?">{{ user_question }}</textarea>
+                        <button type="submit" class="bg-on-primary-container text-primary-fixed px-8 py-4 rounded-full font-bold">Gerar resposta</button>
+                    </form>
+                </section>
+
+                {% if answer %}
+                <section aria-live="polite" class="bg-tertiary-fixed rounded-xl p-6 bento-card">
+                    <h2 class="font-black text-2xl mb-3">Resposta</h2>
+                    <p class="whitespace-pre-wrap break-words">{{ answer }}</p>
+                </section>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-outline-variant px-6 py-8 text-center text-on-surface-variant">&copy; Celebrity Detector AI</footer>
+</body>
+</html>
