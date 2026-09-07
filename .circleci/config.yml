@@ -1,0 +1,74 @@
+version: 2.1
+
+executors:
+  gcloud-executor:
+    docker:
+      - image: google/cloud-sdk:latest
+    working_directory: ~/repo
+
+commands:
+  authenticate-gcp:
+    steps:
+      - run:
+          name: Authenticate with Google Cloud
+          command: |
+            echo "$GCLOUD_SERVICE_KEY" | base64 --decode > /tmp/gcp-key.json
+            gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+            gcloud config set project "$GOOGLE_PROJECT_ID"
+
+jobs:
+  checkout-code:
+    executor: gcloud-executor
+    steps:
+      - checkout
+
+  build-docker-image:
+    executor: gcloud-executor
+    steps:
+      - checkout
+      - setup_remote_docker
+      - authenticate-gcp
+      - run:
+          name: Configure Docker authentication
+          command: gcloud auth configure-docker "${GOOGLE_COMPUTE_REGION}-docker.pkg.dev" --quiet
+      - run:
+          name: Build and push image
+          command: |
+            IMAGE_URI="${GOOGLE_COMPUTE_REGION}-docker.pkg.dev/${GOOGLE_PROJECT_ID}/celebrity-detector-repo/celebrity-detector:latest"
+            docker build -t "$IMAGE_URI" .
+            docker push "$IMAGE_URI"
+
+  deploy-to-gke:
+    executor: gcloud-executor
+    steps:
+      - checkout
+      - authenticate-gcp
+      - run:
+          name: Install GKE authentication plugin
+          command: |
+            apt-get update
+            apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin kubectl
+      - run:
+          name: Configure cluster access
+          command: |
+            gcloud container clusters get-credentials "$GKE_CLUSTER" \
+              --region "$GOOGLE_COMPUTE_REGION" \
+              --project "$GOOGLE_PROJECT_ID"
+      - run:
+          name: Deploy application
+          command: |
+            kubectl apply -f kubernetes-deployment.yaml
+            kubectl rollout restart deployment/celebrity-detector-app
+            kubectl rollout status deployment/celebrity-detector-app --timeout=10m
+
+workflows:
+  version: 2
+  deploy-pipeline:
+    jobs:
+      - checkout-code
+      - build-docker-image:
+          requires:
+            - checkout-code
+      - deploy-to-gke:
+          requires:
+            - build-docker-image
