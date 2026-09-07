@@ -17,58 +17,116 @@ commands:
             gcloud config set project "$GOOGLE_PROJECT_ID"
 
 jobs:
+
+  # ---------------------------------------------------------
+  # Job 1 - Checkout
+  # ---------------------------------------------------------
   checkout-code:
     executor: gcloud-executor
+
     steps:
       - checkout
 
+  # ---------------------------------------------------------
+  # Job 2 - Build Docker image and push to Artifact Registry
+  # ---------------------------------------------------------
   build-docker-image:
     executor: gcloud-executor
+
     steps:
       - checkout
+
+      # Instala o Docker CLI dentro do executor
+      - run:
+          name: Install Docker CLI
+          command: |
+            apt-get update
+            apt-get install -y docker.io
+            docker --version
+
+      # Cria o ambiente Docker remoto do CircleCI
       - setup_remote_docker
+
+      # Autenticação no Google Cloud
       - authenticate-gcp
+
+      # Configura autenticação do Docker com Artifact Registry
       - run:
           name: Configure Docker authentication
-          command: gcloud auth configure-docker "${GOOGLE_COMPUTE_REGION}-docker.pkg.dev" --quiet
+          command: |
+            gcloud auth configure-docker \
+              "${GOOGLE_COMPUTE_REGION}-docker.pkg.dev" \
+              --quiet
+
+      # Build e push da imagem
       - run:
           name: Build and push image
           command: |
             IMAGE_URI="${GOOGLE_COMPUTE_REGION}-docker.pkg.dev/${GOOGLE_PROJECT_ID}/celebrity-detector-repo/celebrity-detector:latest"
+
+            echo "Building image:"
+            echo "$IMAGE_URI"
+
             docker build -t "$IMAGE_URI" .
+
+            echo "Pushing image to Artifact Registry..."
+
             docker push "$IMAGE_URI"
 
+  # ---------------------------------------------------------
+  # Job 3 - Deploy no Google Kubernetes Engine
+  # ---------------------------------------------------------
   deploy-to-gke:
     executor: gcloud-executor
+
     steps:
       - checkout
+
+      # Autenticação no Google Cloud
       - authenticate-gcp
+
+      # Instala kubectl e plugin de autenticação do GKE
       - run:
           name: Install GKE authentication plugin
           command: |
             apt-get update
-            apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin kubectl
+            apt-get install -y \
+              google-cloud-cli-gke-gcloud-auth-plugin \
+              kubectl
+
+      # Configura acesso ao cluster
       - run:
           name: Configure cluster access
           command: |
             gcloud container clusters get-credentials "$GKE_CLUSTER" \
               --region "$GOOGLE_COMPUTE_REGION" \
               --project "$GOOGLE_PROJECT_ID"
+
+      # Deploy da aplicação
       - run:
           name: Deploy application
           command: |
             kubectl apply -f kubernetes-deployment.yaml
-            kubectl rollout restart deployment/celebrity-detector-app
-            kubectl rollout status deployment/celebrity-detector-app --timeout=10m
+
+            kubectl rollout restart \
+              deployment/celebrity-detector-app
+
+            kubectl rollout status \
+              deployment/celebrity-detector-app \
+              --timeout=10m
 
 workflows:
   version: 2
+
   deploy-pipeline:
     jobs:
+
       - checkout-code
+
       - build-docker-image:
           requires:
             - checkout-code
+
       - deploy-to-gke:
           requires:
             - build-docker-image
